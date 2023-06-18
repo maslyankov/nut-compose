@@ -1,0 +1,42 @@
+---
+version: "3.1"
+
+services:
+# Daemon for monitoring a locally-connected ups
+  nut-upsd:
+    image: ${REGISTRY_URI:-instantlinux}/nut-upsd:latest
+    restart: always
+    environment:
+       NAME: APC-SmartUPS-2200-RM
+#       SERIAL: ${UPS_1_SERIAL}
+       API_USER: upsmon
+       API_PASSWORD: upsmonpass
+       DRIVER: apcsmart
+       PORT: /dev/ttyUSB0
+    ports:
+    - ${PORT_UPSD_1:-3493}:3493
+    secrets:
+    - nut-upsd-password
+#    volumes:
+#    - ./upsd:/etc/nut
+    devices:
+    - /dev/serial/by-id/usb-FTDI_FT231X_USB_UART_D306ENZ6-if00-port0:/dev/ttyUSB0
+
+# For single local ups
+  nut-webui:
+#    image: teknologist/webnut:latest
+    build:
+      context: ./nut-web
+      dockerfile: Dockerfile
+    environment:
+    - UPS_HOST=nut-upsd
+    - UPS_PORT=3493
+    - UPS_USER=monuser
+    - UPS_PASSWORD=upsmonpass
+    ports:
+    - '6543:6543'
+
+secrets:
+  nut-upsd-password:
+    file: /var/adm/admin/secrets/nut-upsd-password
+
